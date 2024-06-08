@@ -1,0 +1,989 @@
+```{=html}
+<style>
+body {
+  font-family: 'Times New Roman', Times, serif;
+  line-height: 1.5;
+  margin: 1in;
+  font-size: 12pt;
+}
+
+p, li {
+  font-size: 12pt;
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Times New Roman', Times, serif;
+}
+</style>
+```
+---
+title: 'Forecasting Bacterial Diarrhea Incidence: A Comparative Analysis Using Time Series Decomposition, Exponential Smoothing, and ARIMA Models'
+author: "Alleanna Arandia, Hazel Lorraine Daul, Mary Grace Garcia"
+date: "2024-06-04"
+output:
+  pdf_document:
+    latex_engine: xelatex
+    keep_tex: true
+  html_document:
+    css: styles.css
+  bibliography: references.bib  
+header-includes:
+  - \usepackage{fontspec}
+  - \setmainfont{Times New Roman}
+geometry: margin=1in
+fontsize: 12pt
+line-height: 1.5
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load necessary libraries
+library(tidyverse)
+library(dplyr)
+library(magrittr)
+library(ggplot2)
+library(lubridate)
+library(tsibble)
+library(feasts)
+library(forecast)
+library(fpp2)
+library(tseries)
+library(urca)
+library(ggplot2)
+library(fabletools)
+library(AICcmodavg)
+library(fpp3)
+library(MuMIn)
+
+# Set working directory (adjust this to your path)
+knitr::opts_knit$set(root.dir = "C:/Users/Aspire 5/Desktop/Gratia Files/UP BS AMAT/2ND YEAR 2ND SEM/AMAT 132/Group Project")
+
+```
+
+# 1 \| Introduction
+
+Bacterial diarrhea is a common gastrointestinal condition caused by various types of bacteria. These bacteria can enter the body through contaminated food or water and can lead to symptoms such as abdominal pain, diarrhea, and vomiting. In severe cases, bacterial diarrhea can also result in dehydration and weight loss [1]
+
+In the Philippines, diarrhea continues to be among the top 10 primary causes of morbidity and mortality. Even so, diarrhea-related mortality decreased to around 2.7 thousand in 2020 compared to the total of the year before, the morbidity rates have not declined rapidly. The Philippines also follows the global "trend" of cases where children 5 years old are more susceptible; it follows that it is also the leading cause of mortality cases, with up to 12,500 Filipino children dying from dehydration induced by diarrhea every year.  The prevalence of diarrheal disease in the country is substantial, with many cases reported yearly [2]
+
+Davao City is the largest city in the Philippines by land area and population. It has a mild tropical climate with consistent rainfall throughout the year, even during its hottest month, April. An outbreak of diarrhea caused by food contamination affected individuals who consumed certain items from Toril Public Market [3].
+
+ The pathogen responsible for the outbreak has been identified as Vibrio cholera (bacteria), with positive developments reported as of July 27, 2022. Another recent diarrhea epidemic occurred in Barangay Tulalian, resulting in one fatality, and hospitalizing 47 people [3] 
+
+With this, accurately predicting the incidence of bacterial diarrhea is crucial for effective public health planning, resource allocation, and implementing timely interventions. In this study, we undertake a comprehensive comparative analysis to forecast bacterial diarrhea incidence using three statistical methodologies: Time Series Decomposition, Exponential Smoothing, and Auto-Regressive Integrated Moving Average (ARIMA) models.
+
+## 1.1 \| Objectives
+
+This study will develop and evaluate forecasting models for predicting the incidence of bacterial diarrhea in Davao City using historical epidemiological data. Specifically, this study aims to:
+
+1.  analyze historical trends and patterns, identify and understand the underlying trends, seasonal variations, and irregular components of the bacterial diarrhea incidence data;
+
+2.  implement Exponential Smoothing methods and Auto-Regressive Integrated Moving Average (ARIMA) models to forecast future incidences of bacterial diarrhea;
+
+3.  compare the accuracy and reliability of the different forecasting models using various performance metrics such as Mean Absolute Error (MAE), Mean Squared Error (MSE), Root Mean Squared Error (RMSE), and Mean Absolute Percentage Error (MAPE);
+
+4.  generate actionable insights and reliable forecasts that can assist public health authorities in Davao City in planning and implementing timely interventions to mitigate the impact of bacterial diarrhea outbreaks. 
+
+## 1.2 \| Scope
+
+This study will be centered on the assessment of prediction models for forecasting the occurrence of bacterial diarrhea in Davao City, Philippines. The study comprises the following components:
+
+1.  Data Gathering: The secondary data utilized is historical epidemiological information on bacterial diarrhea cases from PhilHealth, focusing on various demographic and temporal details.
+
+2.  Geographic Emphasis: The analysis specifically concentrates on Davao City, considering local factors such as population density, and healthcare infrastructure that may affect bacterial diarrhea incidence.
+
+3.  Time Series Examination: This involves breaking down the time series data into trend, seasonality, and irregular variations to understand historical patterns in bacterial diarrhea incidence.
+
+4.  Prediction Models: Various forecasting models will be implemented and compared, including Exponential Smoothing methods and Auto-Regressive Integrated Moving Average Models with different configurations.
+
+5.  Model Assessment: Multiple accuracy metrics such as Mean Absolute Error, Mean Squared Error, Root Mean Squared Error, and Mean Absolute Percentage Error, will be used to evaluate model performance
+
+6.  Public Health Application: Forecasts generated by this study can provide valuable insights to support public health authorities in planning timely interventions against bacterial diarrhea outbreaks in Davao City.
+
+## 1.3 \| Significance
+
+This study holds significant importance for various stakeholders, including public health authorities, policymakers, healthcare providers, and the general population of Davao City. The primary significance lies in the following areas:
+
+1.  **Strengthened public health preparedness**. With this, we can create precise predictive models for the public health authorities to be equipped with dependable tools to anticipate bacterial diarrhea outbreaks effectively. This foresight allows for timely interventions like vaccination campaigns, public health advisories, and resource allocation to reduce outbreaks' incidence and impact.
+
+2.  **Evidence-Based Decision Making:** The incorporation of advanced statistical models such as Exponential Smoothing and ARIMA into public health planning supports data-driven decision-making processes. These models enable authorities to analyze trends and patterns accurately, leading to informed decisions that enhance the effectiveness of health interventions and policies.
+
+3.  **Efficient Resource Management:** Accurate forecasts facilitate improved planning and distribution of medical resources such as antibiotics, rehydration solutions, and hospital beds, which ensures their availability where needed most, thus enhancing efficiency and responsiveness within the healthcare system.
+
+4.  **Enhanced Public Health Outcomes:** By mitigating the severity and frequency of bacterial diarrhea outbreaks, the study contributes towards improving health outcomes for the population of Davao City. Reduced morbidity and mortality rates associated with bacterial diarrhea, improved overall well-being, and an enhanced quality of life for the community.
+
+5.  **Foundation for Future Research**: The approaches and insights derived from this research establish a valuable base for future research in epidemiological forecasting. Researchers can expand on this work to explore other infectious diseases as well as to develop forecast models suited to different regions and risk contexts.
+
+# 2 \| Methods {style="body {   font-family: 'Times New Roman', Times, serif;   line-height: 1.5;   margin: 1in;   font-size: 12pt; }  p, li {   font-size: 12pt;   line-height: 1.5; }  h1, h2, h3, h4, h5, h6 {   font-family: 'Times New Roman', Times, serif; }"}
+
+## Data Pre-processing {style="body {   font-family: 'Times New Roman', Times, serif;   line-height: 1.5;   margin: 1in;   font-size: 12pt; }  p, li {   font-size: 12pt;   line-height: 1.5; }  h1, h2, h3, h4, h5, h6 {   font-family: 'Times New Roman', Times, serif; }"}
+
+The process of gathering information on bacterial diarrhea cases in the Philippines involved obtaining precise and dependable data. The primary source for collecting the data was PhilHealth of Davao City, which offers an informative report detailing diarrhea cases within the city. Data collection occurred from 2006 – when reports initially became available – up until 2018. To accumulate all necessary details, researchers drew upon the file given by DiWA to produce a thorough dataset organized by year, month, and a corresponding number of reported cases of people suffering from diarrhea. The details regarding the data source were meticulously recorded. Such an exhaustive protocol adopted for gathering relevant information guarantees the credibility and trustworthiness of the facts collected, which can be further analyzed and studied for research purposes.
+
+The assumption the researchers made for this study are the following:
+
+-   The number of admissions are assumed to be the count of cases or the number of cases per month in a year
+
+-   The missing values were disregarded from 2006 - 2009, and used the 2010-2018
+
+```{r, echo=FALSE, results='hide'}
+# Clear the environment
+rm(list = ls())
+
+# Set working directory (adjust this to your path)
+setwd("/Users/Aspire 5/Desktop/Gratia Files/UP BS AMAT/2ND YEAR 2ND SEM/AMAT 132/Group Project")
+
+# Load the data
+mydata <- read.csv("PhilHealth_admissions_diarrhoea_individual_2006-2018.csv")
+
+# Filter data based on desired condition
+filtered_data <- mydata %>%
+  filter(Illness1Code %in% c("A06.0", "A06.1", "A06.2", "A06.9",
+                             "A09.0", "A09.1", "A03.9", "A04.9", "A05.0",
+                             "A06.4", "A06.8", "A02.9", "A05.9", "A02.0",
+                             "A02.1", "A04.1", "A04.8", "A06.3", "A05.2", "A04.2"))
+
+# Convert AdmitDate to a date format
+filtered_data <- filtered_data %>%
+  mutate(AdmitDate = dmy(AdmitDate))
+
+# Generate Year and Month columns from AdmitDate
+filtered_data <- filtered_data %>%
+  mutate(
+    Year = year(AdmitDate),
+    Month = month(AdmitDate)
+  )
+
+# Create a Month column and count admissions per month
+filtered_data_ts <- filtered_data %>%
+  mutate(Month = yearmonth(AdmitDate)) %>%
+  group_by(Month) %>%
+  summarise(Count = n()) %>%
+  arrange(Month) %>%
+  as_tsibble(index = Month)
+
+# Fill gaps in the time series
+filtered_data_ts <- filtered_data_ts %>%
+  fill_gaps(Count = 0)
+
+# Filter the data to include only the years from 2010 to 2018
+filtered_data_ts <- filtered_data_ts %>%
+  filter(year(Month) >= 2010 & year(Month) <= 2018)
+
+# View the filtered data
+filtered_data_ts
+
+
+# Set training data from Jan 2010 to Dec 2013
+train <- filtered_data_ts |>
+  filter_index("2010-01" ~ "2014-12") |>
+  select(Count)
+
+test <- filtered_data_ts |>
+  filter_index("2015-01" ~ "2018-12") |>
+  select(Count)
+
+#View the filtered datasets
+train
+test
+train_set <- as.data.frame(train)
+test_set <- as.data.frame(test)
+
+
+```
+
+### The filtered data
+
+```{r, echo=FALSE}
+# View the filtered data
+filtered_data_ts
+```
+
+## Time series decomposition
+
+#### Plotting of the Time Series Data (Raw Data)
+
+Shown in Figure 1 is the Time Series Plot of the bacterial diarrhea in Davao City from 2010 to 2018. It is conducted monthly, so its frequency is set to 12. Time series decomposition was used, and it showed trend and seasonality.
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Create the time series plot using autoplot from feasts
+autoplot(filtered_data_ts, Count) +
+  labs(title = "Admissions by Month",
+       x = "Month",
+       y = "Number of Admissions") +
+  theme_minimal() +
+  scale_x_yearmonth(date_breaks = "1 year", date_labels = "%Y")
+```
+
+***Figure 1. Time Series Plot of the Bacterial Diarrhea in Davao City from January 2006 to December 2019.*** 
+
+#### Plotting of the Time Series Data (Training Set)
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Create the time series plot using autoplot from feasts
+autoplot(train, Count) +
+  labs(title = "Admissions by Month",
+       x = "Month",
+       y = "Number of Admissions") +
+  theme_minimal() +
+  scale_x_yearmonth(date_breaks = "1 year", date_labels = "%Y")
+```
+
+***Figure 2. Time Series Plot of the Bacterial Diarrhea in Davao City from January 2010 to December 2015 (training set)*** 
+
+#### STL Decomposition
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+train |>
+  model(
+    STL(Count ~ trend(window = 7) +
+                   season(window = "periodic"),
+    robust = TRUE)) |>
+  components() |>
+  autoplot()
+```
+
+***Figure 3. Time Series Decomposition of Bacterial Diarrhea in Davao City from January 2010 to December 2014.*** 
+
+Shown in figure 2 is the breakdown of the time series plot into 4 different plots,  such as the count plot, trend plot, seasonal plot, and remainder plot. The top plot (count plot) shows time series data that fluctuates over time without a clear pattern. This is the original data. The second plot (trend plot) displays a smoother line representing the underlying trend in the data, excluding seasonal effects. The third plot (seasonal plot) reveals a repeating pattern, indicating seasonality in the data on an annual basis. The bottom plot (remainder plot) represents the residual or noise left after extracting the trend and seasonal components from the original data.
+
+#### Seasonal plot and Seasonal subseries plot
+
+As we have observed from the time series decomposition, the researchers opt to proceed with seasonal plot and the seasonal subseries plot to help choose for ETS model, whether to use the additive or multiplicative seasonality.
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+train |>
+  gg_season(Count, labels = "both") +
+  labs(y = "Admissions",
+       title = "Seasonal plot: Number of Admissions")
+```
+
+***Figure 4. Seasonal Plot of the Time Series Data (from 2010-2014)*** 
+
+The time series data for admissions appear to show additive seasonality based on the seasonal plot. Over time, the seasonal influence stays mostly unchanged, and its variance does not alter in direct proportion to the time series' level. Thus, for this case, an additive model for exponential smoothing (ETS) would make sense.
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+train |>
+  gg_subseries(Count) +
+  labs(
+    y = "Admissions",
+    title = "Number of Admissions"
+  )
+```
+
+***Figure 5. Seasonal Subseries Plot of the Time Series Data (from 2010-2014)*** 
+
+Based on the seasonal subseries plot, additive seasonality is observed. The monthly patterns demonstrate that the seasonal variance is relatively stable across time, indicating that seasonality is not inversely correlated with series level. The variation in admissions appears to remain constant as shown by the blue line.
+
+#### Simple forecasting methods
+
+##### Using the three simple forecasting methods, namely: Mean Method, Naive Method and the Seasonal Naive Method
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Assuming 'train' and 'test' are your tsibbles
+
+# Fit models
+train_fit <- train |>
+  model(
+    Mean = MEAN(Count),
+    `Naïve` = NAIVE(Count),
+    `Seasonal naïve` = SNAIVE(Count ~ lag("year"))
+  )
+
+# Generate forecasts for 48 periods (e.g., months)
+train_fc <- train_fit |> forecast(h = 48)
+
+# Combine the training set, test set, and forecasted values in a single plot
+autoplot(train_fc, train, level = NULL) +
+  autolayer(test, Count, series = "Test Set", colour = "red") +
+  autolayer(
+    filter_index(filtered_data_ts, "2010-01-01" ~ .),  # Adjust the date range as needed
+    colour = "black"
+  ) +
+  labs(y = "Cases", title = "Admissions per Month") +
+  guides(colour = guide_legend(title = "Forecast"))
+
+# Augment the training fit
+augmented_data <- augment(train_fit)
+```
+
+***Figure 6. Combined plot of the the training set and forecasted values using mean, naive, and seasonal naive methods***
+
+#### **Mean Method**
+
+```{r, , echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Fit the model
+mean_fit <- train |>
+  model(Mean = MEAN(Count))
+
+# Generate forecasts for the test period
+mean_fc <- mean_fit |> forecast(new_data = test)
+
+# Plot forecasts against actual values including the test set
+autoplot(mean_fc, level = c(80, 95)) +
+  autolayer(train, Count, series = "Training Data") +
+  autolayer(test, Count, series = "Test Data", colour = "red") +
+  labs(y = "Cases", title = "Admissions per Month") +
+  guides(colour = guide_legend(title = "Series")) +
+  theme_minimal()
+```
+
+***Figure 7. Mean Method 4-year Forecast against actual data(red)***
+
+*This section shows the error metric values of the mean method.*
+
+```{r, , echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Calculate accuracy metrics using the actual test data and the forecasts
+accuracy_metrics <- accuracy(mean_fc, test)
+print(accuracy_metrics)
+```
+
+```{r, , echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Augment the training fit
+augmented_data <- augment(mean_fit)
+
+# Plot residuals for the 'Mean' model
+mean_fit |>
+  gg_tsresiduals()
+```
+
+***Figure 8. Plot the residuals of Mean Method***
+
+#### **Naive Method**
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+naive_fit <- train |>
+  model(
+    `Naïve` = NAIVE(Count)
+  )
+
+# Generate forecasts for the test period
+naive_fc <- naive_fit |> forecast(new_data = test)
+
+# Plot forecasts against actual values including the test set
+autoplot(naive_fc, level = c(80, 95)) +
+  autolayer(train, Count, series = "Training Data") +
+  autolayer(test, Count, series = "Test Data", colour = "red") +
+  labs(y = "Cases", title = "Admissions per Month") +
+  guides(colour = guide_legend(title = "Series")) +
+  theme_minimal()
+```
+
+***Figure 9. Naive Method 4-year Forecast against actual data(red)***
+
+*This section shows the error metric values of the naive method.*
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Calculate accuracy metrics using the actual test data and the forecasts
+accuracy_metrics <- accuracy(naive_fc, test)
+
+# View the accuracy metrics
+print(accuracy_metrics)
+```
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Plot residuals for the 'Naive' model
+naive_fit |>
+  gg_tsresiduals()
+```
+
+***Figure 10. Plot the residuals of Naive Method***
+
+#### **Seasonal Naive Method**
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Fit the Seasonal Naïve model to the training data
+snaive_fit <- train |>
+  model(
+    `Seasonal naïve` = SNAIVE(Count)
+  )
+
+# Generate forecasts for the test period
+snaive_fc <- snaive_fit |> forecast(new_data = test)
+
+# Plot forecasts against actual values including the test set
+autoplot(snaive_fc, level = c(80, 95)) +
+  autolayer(train, Count, series = "Training Data") +
+  autolayer(test, Count, series = "Test Data", colour = "red") +
+  labs(y = "Cases", title = "Admissions per Month") +
+  guides(colour = guide_legend(title = "Series")) +
+  theme_minimal()
+
+```
+
+***Figure 11. Seasonal Naive Method 4-year Forecast against actual data(red)***
+
+*This section shows the error metric values of the seasonal naive method.*
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Calculate accuracy metrics using the actual test data and the forecasts
+accuracy_metrics <- accuracy(snaive_fc, test)
+
+# View the accuracy metrics
+print(accuracy_metrics)
+```
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+
+# Plot residuals for the 'Mean' model
+snaive_fit |>
+  gg_tsresiduals()
+```
+
+***Figure 12. Plot the residuals of Seasonal Naive Method***
+
+##### **Residuals of each Simple Forecasting Method**
+
+In this section is the accuracy of the three simple forecasting method given by the MAE and RMSE error metric values.
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Calculate accuracy metrics for each model
+accuracy_metrics_mean <- accuracy(mean_fc, test)
+accuracy_metrics_naive <- accuracy(naive_fc, test)
+accuracy_metrics_snaive <- accuracy(snaive_fc, test)
+
+# Create a data frame to store accuracy metrics
+accuracy_stats <- data.frame(
+  Model = c("Mean Method", "Naive Method", "Seasonal Naive Method"),
+  MAE = c(accuracy_metrics_mean$MAE, accuracy_metrics_naive$MAE, accuracy_metrics_snaive$MAE),
+  RMSE = c(accuracy_metrics_mean$RMSE, accuracy_metrics_naive$RMSE, accuracy_metrics_snaive$RMSE)
+)
+
+print(accuracy_stats)
+
+```
+
+As observed based on the table, Seasonal Naive Method captured the forecasting accuracy then the other 2 simple methods with MAE of 18.98 and RMSE of 23.48. It appears that the Seasonal Naive Method works for this time series data given the seasonality composition of the time series.
+
+After using these three simple forecasting methods, the researchers opt to compare the Exponential Smoothing Models and ARIMA Models.
+
+## Test for Stationarity
+
+As observed from the time series plot and the time series decomposition, the graph seems fluctuating and has slight trend and an evident seasonality, hence we can deduce that the time series data is not stationary. But, still we need to consider the ADF test and KPSS test to decide whether the time series data is indeed stationary or not.
+
+#### ADF Test and KPSS Test
+
+The researchers conducted an Augmented Dickey-Fuller (ADF) Test to determine the stationarity of the data. The test resulted in a p-value of 0.4732, which is greater than the significance level of 0.05. Also, the researchers tested the Kwiatkowski–Phillips–Schmidt–Shin (KPSS), with the result of p-value of 0.09478, which is greater than the significance level of 0.01.  ADF test suggests the time series is non-stationary, while the KPSS test suggests it is stationary. To address this, the researchers applied first-order differencing to the data, which transformed it into a stationary series. The differenced data yielded a p-value of 0.01, indicating stationarity.
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Extract the Count column as a numeric vector
+count_vector <- train %>% pull(Count)
+
+# Perform the Augmented Dickey-Fuller test
+adf_result <- adf.test(count_vector, k = 1)
+print(adf_result)
+
+# Perform the KPSS test on the original time series
+kpss_result <- kpss.test(count_vector)
+print(kpss_result)
+```
+
+These are the ACF and PACF plot of the training set.
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+acf((train),main = "ACF of Training Set")
+pacf((train),main = "PACF of Training Set")
+```
+
+***Figure 13-14. ACF and PACF plot of the training set***
+
+### First Order Differencing
+
+We proceeded to apply first-order differencing to make sure the time series data is stationary.
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Perform differencing on the Count variable
+diff_train <- train |>
+  mutate(diff_Count = difference(Count))
+
+# Plot the differenced time series
+diff_train |>
+  ggplot(aes(x = Month, y = diff_Count)) +
+  geom_line() +
+  labs(title = "First-Order Differenced Monthly Admissions", x = "Month", y = "Differenced Count") +
+  theme_minimal()
+
+# Plot ACF of the differenced time series
+diff_train |>
+  ACF(diff_Count) |>
+  autoplot() +
+  labs(title = "Autocorrelation Function (ACF) of Differenced Monthly Admissions", 
+       x = "Lag", 
+       y = "Autocorrelation",
+       caption = "Using default method") +  # Adding a caption
+  theme_minimal()
+
+diff_train |>
+  PACF(diff_Count) |>
+  autoplot() +
+  labs(title = "Partial Autocorrelation Function (PACF) of Differenced Monthly Admissions", 
+       x = "Lag", 
+       y = "Autocorrelation",
+       caption = "Using default method") +  # Adding a caption
+  theme_minimal()
+```
+
+***Figure 15-17. First-Order Differencing of the Training Set. With the ACF and PACF plot of the differenced time series.***
+
+The time series' ACF and PACF plot after first-order differencing became stationary, suggesting that it has a trend and seasonality. Observe as well, that the autocorrelation becomes white noise after differencing, implies there are no predictable patterns such as seasonality or trend in the data.
+
+We also decided to try second-order differencing to see if there are significant spikes on the ACF and PACF plot of the differenced time series.
+
+### Second Order Differencing
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Perform second-order differencing on the diff_Count variable
+secdiff_train <- train |>
+  mutate(second_order_diff_Count = difference(difference(Count)))
+
+# Plot the differenced time series
+secdiff_train |>
+  ggplot(aes(x = Month, y = second_order_diff_Count)) +
+  geom_line() +
+  labs(title = "Second-Order Differenced Monthly Admissions", x = "Month", y = "Second-Order Differenced Count") +
+  theme_minimal()
+
+# Plot the ACF of the second-order differenced time series
+secdiff_train |>
+  ACF(second_order_diff_Count) %>%
+  autoplot() +
+  labs(title = "ACF of Second-Order Differenced Monthly Admissions", 
+       x = "Lag", 
+       y = "Autocorrelation",
+       caption = "Using default method") +  # Adding a caption
+  theme_minimal()
+
+# Plot the ACF of the second-order differenced time series
+secdiff_train |>
+  PACF(second_order_diff_Count) %>%
+  autoplot() +
+  labs(title = "PACF of Second-Order Differenced Monthly Admissions", 
+       x = "Lag", 
+       y = "Autocorrelation",
+       caption = "Using default method") +  # Adding a caption
+  theme_minimal()
+```
+
+***Figure 18-20. Second-Order Differencing of the Training Set. With the ACF and PACF plot of the differenced time series.***
+
+We can see that it has significant spikes at Lag 1 and 2 in the PACF Plot while Lag 1 in the ACF Plot. These values could be the values for p and q, but the first-order differenced is still preferred since it has a white noise ACF and PACF plot, but we can still consider these values,
+
+### Seasonal Differencing
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Convert to ts object
+training_data_ts <- ts(train$Count, start = c(year(train$Month[1]), month(train$Month[1])), frequency = 12)
+
+# Apply seasonal differencing (assuming yearly seasonality with lag = 12)
+seasonal_diff <- diff(training_data_ts, lag = 12)
+
+# Apply first-order differencing to the seasonal difference
+seasonal_first_order_diff <- diff(seasonal_diff)
+
+# Display the time series with ACF and PACF for first-order differencing of the seasonal difference
+ggtsdisplay(seasonal_first_order_diff, main = "First-Order Differenced Seasonal Time Series with ACF and PACF")
+
+```
+
+***Figure 21-23. Seasonal Differencing (First-order) of the Training Set. With the ACF and PACF plot of the differenced time series.***
+
+# Model Training
+
+## Exponential Smoothing using ETS
+
+The researchers also tried the Exponential Smoothing time series method to see if the data it will forecast  is somewhat the same as the recent past. The Holt-Winters method is used for time-series forecasting because it can capture trends and seasonality in the data, making it particularly useful for predicting future values of a time series that exhibits these patterns. The method is also relatively simple and can produce accurate forecasts. The Damped Holt-Winters method is the extension of the traditional Holt-Winters exponential smoothing method by including a damping parameter. This parameter helps to control the impact of the trend component over time, and preventing it from extrapolating unrealistically far into the future. 
+
+Prior to the exponential smoothing, we have observed based on the seasonal plots that the time series exhibited an additive seasonality. Hence, in this section, we will use the additive seasonality to address the seasonality patterns that the time series have.
+
+##### Holt-Winter's Exponential Smoothing (Additive)
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Fit an Exponential Smoothing model
+hw_es_fit <- train %>%
+  model(es = fable::ETS(Count ~ error("A") + trend("A") + season("A")))
+
+# Forecast future values
+hw_forecast1 <- hw_es_fit %>%
+  forecast(test)  # Forecasting for the next 48 months
+
+# Plot forecasts against actual values including the test set
+autoplot(hw_forecast1, level = c(80, 95)) +
+  autolayer(train, Count, series = "Training Data") +
+  autolayer(test, Count, series = "Test Data", colour = "red") +
+  labs(y = "Cases", title = "Holt-Winters Forecast") +
+  guides(colour = guide_legend(title = "Series")) +
+  theme_minimal()
+```
+
+***Figure 24. Holt-Winters: Train Data 4-year Forecast Against Actual Data (red)***
+
+Figure 24 shows a stable trend. The forecast (red line) shows that the model predicts the number of cases to remain relatively stable with some minor fluctuations. The widening of the prediction intervals indicates that the uncertainty of the forecast increases as we move further into the future. This is typical in time series forecasting, as predictions become less certain the further they are projected. The forecast aligns reasonably well with the historical data at the start of the prediction period. This suggests that the Holt-Winters model has captured the underlying pattern in the data reasonably well. The symmetry of the prediction intervals around the forecast line suggests that the model expects any deviations from the forecast to be equally likely in both positive and negative directions.
+
+Shown here are the smoothing parameters of the model, together with the AIC, AICc, and BIC values:
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+report(hw_es_fit)
+```
+
+##### Damped Holt-Winter's Exponential Smoothing (Additive)
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Fit an Exponential Smoothing model
+dhw_es_fit <- train %>%
+  model(es = fable::ETS(Count ~ error("A") + trend("Ad") + season("A")))
+
+# Forecast future values
+dhw_forecast1 <- dhw_es_fit %>%
+  forecast(test)  # Forecasting for the next 48 months
+
+# Plot forecasts against actual values including the test set
+autoplot(dhw_forecast1, level = c(80, 95)) +
+  autolayer(train, Count, series = "Training Data") +
+  autolayer(test, Count, series = "Test Data", colour = "red") +
+  labs(y = "Cases", title = "Damped Holt-Winters Forecast") +
+  guides(colour = guide_legend(title = "Series")) +
+  theme_minimal()
+```
+
+***Figure 25. Damped Holt-Winters: Train Data 4-year Forecast Against Actual Data (red)***
+
+Figure 25 shows the prediction intervals in the Damped Holt-Winters forecast are generally wider than those in the regular Holt-Winters forecast. This suggests that the Damped Holt-Winters method accounts for higher uncertainty in future predictions. The intervals in the Damped Holt-Winters forecast also show more variability, with the 95% interval becoming especially wide. Both forecasts (red lines) show stable trends with minor fluctuations, indicating that the underlying pattern in the data is captured similarly by both methods. However, the Damped Holt-Winters forecast appears to allow for more variability around the mean forecast, which can be seen in the wider prediction intervals.
+
+Shown here are the smoothing parameters of the model, together with the AIC, AICc, and BIC values:
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+report(dhw_es_fit)
+```
+
+#### Error Metrics for Comparison
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Convert train data to a tsibble object
+train_tsibble <- as_tsibble(train)
+test_tsibble <- as_tsibble(test)
+
+# Fit an Exponential Smoothing model
+hw_es_fit <- train_tsibble %>%
+  model(es = fable::ETS(Count ~ error("A") + trend("A") + season("A")))
+
+# Forecast future values
+hw_forecast1 <- hw_es_fit %>%
+  forecast(new_data = test_tsibble)  # Forecasting for the next 48 periods
+
+# Calculate accuracy metrics for the Holt-Winters Exponential Smoothing model
+accuracy_hw_es <- accuracy(hw_forecast1, data = test_tsibble)
+print(accuracy_hw_es)
+
+# Fit an Exponential Smoothing model
+dhw_es_fit <- train_tsibble %>%
+  model(es = fable::ETS(Count ~ error("A") + trend("Ad") + season("A")))
+
+# Forecast future values
+dhw_forecast1 <- dhw_es_fit %>%
+  forecast(new_data = test_tsibble)  # Forecasting for the next 48 months
+
+
+# Calculate accuracy metrics for the Holt-Winters Exponential Smoothing model
+accuracy_dhw_es <- accuracy(dhw_forecast1, data = test_tsibble)
+print(accuracy_dhw_es)
+
+```
+
+The AICc of both models are close, indicating that they are good for fitting, yet the ETS (A,Ad,A) model has the lowest RMSE value of 44.1781 compared to the ETS (A,A,A) with 97.996. As per the results of the accuracy tests and report tests, it appears that the Damped Holt-Winter's Model is the best between the two. Due to its significantly lower RMSE, ETS(A,Ad,A) has a superior predictive accuracy, even though its AICc is slightly higher but not significantly different from the other model.
+
+## ARIMA Models
+
+#### Training Data and Forecasting using the Training Models
+
+After trying ETS Models, the researchers would also examine the ARIMA Models and compare it with the ETS Model - ETS(A,Ad,A).
+
+ARIMA modeling is an essential technique used to analyze the differenced data. In this study, five ARIMA models were employed. The first and second model involved specifying the values of p, d, and q. The third, fourth, and fifth model use SARIMA as it considers seasonality and approximation.
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Ensure `train` is a univariate time series
+# Assuming `train` is a tsibble with a column named 'Count'
+train_ts <- train %>% pull(Count)
+
+# Check if `train_ts` is a time series object; if not, convert it
+if (!is.ts(train_ts)) {
+  train_ts <- ts(train_ts, frequency = 12, start = c(2010, 01)) # Specify the start year and month
+}
+# Assuming `train` is a tsibble with a column named 'Count'
+test_data_ts <- test %>% pull(Count)
+
+# Check if `train_ts` is a time series object; if not, convert it
+if (!is.ts(test_data_ts)) {
+  ttest_data_ts <- ts(test_data_ts, frequency = 12, start = c(2015, 01)) # Specify the start year and month
+}
+
+# Convert filtered_data_ts to a ts object
+filtered_data_ts <- as.ts(filtered_data_ts)
+
+```
+
+These are the values of (p, d, q) and (P, D, Q) for the ARIMA models. We have taken into account the order of differencing, in this case we have underwent first-order differencing and seasonal differencing. These are the following ARIMA Models to be tested and trained:
+
+-   ARIMA (0,1,0)
+
+-   ARIMA (1,1,1)
+
+-   ARIMA (1,0,1)(1,1,1)
+
+-   ARIMA (1,1,1)(1,1,0)
+
+-   ARIMA (1,2,1)(0,1,1)
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Fit ARIMA models
+arima_model010 <- Arima(train_ts, order = c(0, 1, 0))
+arima_model111 <- Arima(train_ts, order = c(1, 1, 1))
+sarima_model101 <- Arima(train_ts, order = c(1, 0, 1), seasonal = c(1, 1, 1))
+sarima_model010 <- Arima(train_ts, order = c(1, 1, 1), seasonal = c(1, 1, 0))
+sarima_model111 <- Arima(train_ts, order = c(1, 2, 1), seasonal = c(0, 1, 1))
+
+
+# Create forecasts
+fc_arima010 <- forecast(arima_model010, h = 48) # Forecasting 5 years ahead
+fc_arima111 <- forecast(arima_model111, h = 48)
+fc_sarima122 <- forecast(sarima_model101, h = 48)
+fc_sarima010 <- forecast(sarima_model010, h = 48)
+fc_sarima111 <- forecast(sarima_model111, h = 48)
+
+
+```
+
+*The following figures are the forecast plot of the five training models (ARIMA)*
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+autoplot(fc_arima010, h=48)
+```
+
+\
+
+***Figure 26. ARIMA (0,1,0) Model Forecast***
+
+```{r}
+autoplot(fc_arima111, h=48)
+
+```
+
+***Figure 27. ARIMA (1,1,1) Model Forecast***
+
+```{r}
+autoplot(fc_sarima122, h=48)
+```
+
+***Figure 28. ARIMA (1,0,1)(1,1,1) Model Forecast***
+
+```{r}
+autoplot(fc_sarima010, h=48)
+```
+
+***Figure 29. ARIMA (1,1,1)(1,1,0) Model Forecast***
+
+```{r}
+autoplot(fc_sarima111, h=48)
+```
+
+***Figure 30. ARIMA (1,2,1)(0,1,1) Model Forecast***
+
+#### Plotting the forecasts of the training models
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Plot the forecasts
+autoplot(train_ts) +
+  autolayer(fc_arima010, series = "ARIMA(0,1,0)", PI = FALSE) +
+  autolayer(fc_arima111, series = "ARIMA(1,1,1)", PI = FALSE) +
+  autolayer(fc_sarima122, series = "SARIMA(1,0,1)(1,1,1)[12]", PI = FALSE) +
+  autolayer(fc_sarima010, series = "SARIMA(1,1,1)(1,1,0)[12]", PI = FALSE) +
+  autolayer(fc_sarima111, series = "SARIMA(1,2,1)(0,1,1)[12]", PI = FALSE) +
+  autolayer(filtered_data_ts, series = "Observed", PI = FALSE) +  # Add observed data
+  ggtitle("Forecasts from ARIMA Models") +
+  xlab("Year") + ylab("Count") +
+  guides(colour = guide_legend(title = "Models"))
+```
+
+***Figure 31. Forecasts Plots of the ARIMA Models***
+
+#### AIC, AICc, and BIC values of the Training Models
+
+In this section, we display the AIC, AICc, and BIC values of the ARIMA Models to ensure which among the models has the lowest values to be considered the best model to use for forecasting the the time series data.
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Extract AIC, AICc, and BIC values
+aic_values <- c(AIC(arima_model010), AIC(arima_model111), AIC(sarima_model101), AIC(sarima_model010), AIC(sarima_model111))
+aicc_values <- c(AICc(arima_model010), AICc(arima_model111), AICc(sarima_model101), AICc(sarima_model010), AICc(sarima_model111))
+bic_values <- c(BIC(arima_model010), BIC(arima_model111), BIC(sarima_model101), BIC(sarima_model010), BIC(sarima_model111))
+
+# Create a data frame to display the results
+model_names <- c("ARIMA(0,1,0)", "ARIMA(1,1,1)", "SARIMA(1,0,1)(1,1,1)[12]", "SARIMA(1,1,1)(1,1,0)[12]", "SARIMA(1,2,1)(0,1,1)[12]")
+model_stats <- data.frame(
+  Model = model_names,
+  AIC = aic_values,
+  AICc = aicc_values,
+  BIC = bic_values
+)
+
+print(model_stats)
+```
+
+#### Accuracy of the Models
+
+In this section, we display the error metric values of the ARIMA Models. Similar to the AIC, AICc, and BIC values, we need to check and compare which among the models have the lowest value possible.
+
+These are the order of the accuracy tests of the models:
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Calculate accuracy metrics for each model
+accuracy_arima010 <- accuracy(fc_arima010, test_data_ts)
+accuracy_arima111 <- accuracy(fc_arima111, test_data_ts)
+accuracy_sarima122 <- accuracy(fc_sarima122, test_data_ts)
+accuracy_sarima010 <- accuracy(fc_sarima010, test_data_ts)
+accuracy_sarima111 <- accuracy(fc_sarima111, test_data_ts)
+```
+
+-   ARIMA (0,1,0)
+
+    ```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+    print(accuracy_arima010)
+    ```
+
+-   ARIMA (1,1,1)
+
+    ```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+    print(accuracy_arima111)
+    ```
+
+-   ARIMA (1,0,1)(1,1,1)
+
+    ```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+    print(accuracy_sarima122)
+    ```
+
+-   ARIMA (1,1,1)(1,1,0)
+
+    ```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+    print(accuracy_sarima010)
+    ```
+
+-   ARIMA (1,2,1)(0,1,1)
+
+    ```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+    print(accuracy_sarima111)
+    ```
+
+After comparing the three models, although SARIMA (1,2,1) (1,1,0) [12] demonstrated the lowest Akaike Information Criterion corrected (AICc) value of 475.04, but SARIMA (1,0,1)(1,1,1) [12]has the lowest values across the error metrics with RMSE value of 33.28624 and has a good AIC value of 487.20. Despite having the lowest AICc value, SARIMA (1,2,1) (1,1,0) [12] has the a high RMSE value of 57.77391. A reasonable choice to use for forecasting the bacterial diarrhea cases in Davao Region will be the SARIMA (1,0,1)(1,1,1) [12]. This model exhibited the smallest errors among all the models, indicating its superior performance compared to the other SARIMA models with close values of AICc.
+
+#### 
+
+## Comparison
+
+In this section, we compared the ETS Models and the ARIMA Models based on their AICc and Error Metric values, especially the RMSE value.
+
+-   ARIMA (1,0,1)(1,1,1)
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Extract AIC, AICc, and BIC values
+aic_values <- c(AIC(sarima_model101))
+aicc_values <- c(AICc(sarima_model101))
+bic_values <- c(BIC(sarima_model101))
+
+# Create a data frame to display the results
+model_names <- c("SARIMA(1,0,1)(1,1,1)[12]")
+model_stats <- data.frame(
+  Model = model_names,
+  AIC = aic_values,
+  AICc = aicc_values,
+  BIC = bic_values
+)
+
+print(model_stats)
+
+```
+
+-   Damped Holt-Winter's Model
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+report(dhw_es_fit)
+```
+
+-   ARIMA (1,0,1)(1,1,1)
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+print(accuracy_sarima122)
+
+```
+
+-   Damped Holt-Winter's Model
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Calculate accuracy metrics for the Holt-Winters Exponential Smoothing model
+accuracy_dhw_es <- accuracy(dhw_forecast1, data = test_tsibble)
+print(accuracy_dhw_es)
+```
+
+Based on the tables above, the SARIMA Model has the lowest AICc values and as well as lowest error metric values compared to the Damped Holt-Winter's (ETS Model).
+
+### Forecasting to Raw Data
+
+After comparison, the researchers have chosen to use the SARIMA Model - ARIMA(1,0,1)(1,1,1) to forecast the bacterial diarrhea cases of Davao City for the next 10 years.
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+# Convert filtered_data_ts to a ts object
+filtered_data_ts <- as.ts(filtered_data_ts)
+
+sarima_model122.raw <- Arima(filtered_data_ts, order = c(1, 0, 1), seasonal = c(1, 1, 1))
+
+
+# Create forecasts
+fc_sarima122.raw <- forecast(sarima_model122.raw, h = 120)
+
+# Plot the forecasts
+autoplot(filtered_data_ts) +
+  autolayer(fc_sarima122.raw, series = "SARIMA(0,1,0)(1,1,1)[12]", PI = TRUE) +
+  ggtitle("Forecasts from SARIMA(0,1,0)(1,1,1) for 10 years '18-'28") +
+  xlab("Year") + ylab("Count") +
+  guides(colour = guide_legend(title = "Models"))
+
+```
+
+# 3 \| Discussion
+
+The ETS Model and ARIMA Model were able to capture the seasonal component of the time series data of the Bacterial Diarrhea Cases of Davao City.
+
+In the Exponential Smoothing part, the Damped Holt-Winter's Model was a good fit compared to the Holt-Winter's Model. The high alpha value of the ETS(A,Ad,A) model makes it especially sensitive to recent level fluctuations, even though it makes the assumption of a relatively steady trend and seasonal component. The trend component is guaranteed to stabilize over time by the damped trend. Lower values for the information criteria (AIC, AICc, and BIC) indicate that, in comparison to the earlier model examined (ETS(A,A,A), this model may offer a better fit for the data. This methodology works well with time series data that exhibit consistent seasonal and trend patterns and where precise forecasting depends on recent observations.
+
+Meanwhile, in ARIMA Models, we have chosen the SARIMA approach to consider the seasonal component of the time series data. ARIMA (1,0,1)(1,1,1) model provides an optimal balance between accuracy and forecasting. The ACF1 values are also close to zero, suggesting that the residuals are not significantly correlated which is a good factor for forecasting. In comparison to previous models, the chosen model has reduced error metrics and information criteria across the tests and different models, which exhibits a good overall performance.
+
+# 4 \| Conclusion
+
+In conclusion, the best model to use for the time series data of the Bacterial Diarrhea Cases of Davao City would be the SARIMA (1,0,1)(1,1,1) as discussed above. Due to its ability to forecast accurately, capture seasonal and non-seasonal aspects of the data, and maintain a good balance between predictive power and model complexity, it could provide accurate forecasts for the bacterial cases in Davao City for 10 years.
+
+This study aims to develop and evaluate forecasting models for predicting the incidence of bacterial diarrhea in Davao City using historical epidemiological data. The SARIMA (1,0,1)(1,1,1)[12] model meets the objectives of our study in several ways:
+
+1.  **Analyzing Historical Trends and Patterns**:
+
+    -   The SARIMA model effectively captures the underlying trends, seasonal variations, and irregular components of the bacterial diarrhea incidence data. This comprehensive analysis allows for a better understanding of historical patterns and informs accurate forecasting.
+
+2.  **Implementing Forecasting Models**:
+
+    -   Among various models evaluated, including Exponential Smoothing methods and other ARIMA models, the SARIMA (1,0,1)(1,1,1)[12] model demonstrated superior performance in terms of capturing seasonality and providing accurate predictions. This model is helpful in forecasting future incidences of bacterial diarrhea.
+
+3.  **Comparing Accuracy and Reliability**:
+
+    -   The SARIMA (1,0,1)(1,1,1)[12] model was selected based on its lower error metrics, including MAE, MSE, RMSE, and MAPE, compared to other models. These comparisons ensure that the chosen model is both accurate and reliable to forecast the cases of bacterial diarrhea in Davao City.
+
+4.  **Generating Actionable Insights**:
+
+    -   The reliable forecasts generated by the SARIMA model can assist public health authorities in Davao City in planning and implementing timely interventions. Accurate predictions enable proactive measures to mitigate the impact of bacterial diarrhea outbreaks, thus protecting public health.
+
+By aligning the chosen model with the study's objectives, we ensure that the SARIMA (1,0,1)(1,1,1)[12] model not only provides accurate forecasts but also generates actionable insights that support effective public health strategies. This contributes significantly to the overall goal of reducing the incidence and impact of bacterial diarrhea in Davao City.
+
+# References
+
+[1]          S. B. A. Sattar and S. Singh, “Bacterial Gastroenteritis,” in *StatPearls*, Treasure Island (FL): StatPearls Publishing, 2024. Accessed: Jun. 08, 2024. [Online]. Available: <http://www.ncbi.nlm.nih.gov/books/NBK513295/>
+
+[2]          C. Troeger *et al.*, “Estimates of global, regional, and national morbidity, mortality, and aetiologies of diarrhoeal diseases: a systematic analysis for the Global Burden of Disease Study 2015,” *Lancet Infect. Dis.*, vol. 17, no. 9, pp. 909–948, Sep. 2017, doi: 10.1016/S1473-3099(17)30276-1.
+
+[3]          R. L. Llemit, “Davao City confirms diarrhea outbreak due to food contamination.” Accessed: Jun. 08, 2024. [Online]. Available: <https://www.pna.gov.ph/articles/1180119>
